@@ -10,6 +10,6 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid>
-
+        <TextBlock Text="接收" FontSize="24" Name="StatusTextBlock" HorizontalAlignment="Center" VerticalAlignment="Center"/>
     </Grid>
 </Page>

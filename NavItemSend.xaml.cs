@@ -51,6 +51,7 @@ namespace LocalDrop
                 Title = "删除确认",
                 Content = $"确定要删除 {selectedFile.fileName} 吗？",
                 PrimaryButtonText = "删除",
+                SecondaryButtonText = "查看",
                 CloseButtonText = "取消"
             };
             deleteDialog.XamlRoot = this.Content.XamlRoot;
@@ -58,6 +59,13 @@ namespace LocalDrop
             if (result == ContentDialogResult.Primary)
             {
                 fileInfoes.Remove(selectedFile);
+            }
+            else if (result == ContentDialogResult.Secondary)
+            {
+                Process p = new Process();
+                p.StartInfo.FileName = "explorer.exe";
+                p.StartInfo.Arguments = selectedFile.info;
+                p.Start();
             }
         }
 
@@ -333,8 +341,24 @@ namespace LocalDrop
                         FileSender fileSender = new FileSender();
                         foreach (var fileInfo in fileInfoes)
                         {
+                            DispatcherQueue.TryEnqueue(() =>
+                            {
+                                NowSendFileText.Text = $"正在发送{fileInfo.fileName}";
+                            });
+                            Debug.WriteLine($"开始发送{fileInfo.fileName}");
                             fileSender.SendFile(fileInfo, endpointPair.RemoteHostName.ToString(), 27431);
+                            DispatcherQueue.TryEnqueue(() =>
+                            {
+                                NowSendFileText.Text = $"传输完成{fileInfo.fileName}，等待发送下一个文件。";
+                                fileInfoes.Remove(fileInfo);
+
+                            });
                         }
+                        DispatcherQueue.TryEnqueue(() =>
+                        {
+                            NowSendFileText.Text = $"发送列表";
+                        });
+
                     }
                 }
                 else
