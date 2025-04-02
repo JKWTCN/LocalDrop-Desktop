@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "LocalDrop (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "LocalDrop (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
