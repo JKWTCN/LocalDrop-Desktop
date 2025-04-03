@@ -10,6 +10,80 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
+            <Button Content="📜 历史记录">
+                <Button.Flyout>
+                    <Flyout>
+                        <ListView x:Name="HistoryListView" 
+                                ItemsSource="{x:Bind ReceivedFiles}"
+                                SelectionMode="None"
+                                Width="300"
+                                Height="400">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Button HorizontalContentAlignment="Stretch"
+                                          Click="HistoryItem_Click">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding FileName}" 
+                                                     FontWeight="Bold"
+                                                     TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding FilePath}" 
+                                                     Foreground="Gray"
+                                                     TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding ReceivedTime}"
+                                                     FontSize="12"
+                                                     Foreground="DarkGray"/>
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+        </StackPanel>
         <TextBlock Text="接收" FontSize="24" Name="StatusTextBlock" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <ContentDialog x:Name="TransferDialog"
+              Title="文件接收进度"
+              PrimaryButtonText="隐藏"
+              CloseButtonText="关闭"
+              DefaultButton="Close"
+              Width="600">
+            <StackPanel>
+                <ListView ItemsSource="{x:Bind ActiveTransfers}" 
+                 Height="300">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="0,5">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="100"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="{Binding FileName}" 
+                                         FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding StatusMessage}"
+                                         Foreground="Gray"
+                                         FontSize="12"/>
+                                    </StackPanel>
+
+                                    <ProgressBar Grid.Column="1"
+                                       Value="{Binding ProgressPercentage}"
+                                       Minimum="0"
+                                       Maximum="100"
+                                       Height="20"/>
+                                </Grid>
+                                <TextBlock Text="{Binding ProgressText}"
+                                 FontSize="12"
+                                 Foreground="DarkGray"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </StackPanel>
+            
+        </ContentDialog>
     </Grid>
 </Page>

@@ -13,7 +13,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="NavItemReceiver.xaml" />
     <None Remove="NavItemSend.xaml" />
     <None Remove="NavItemSetting.xaml" />
   </ItemGroup>

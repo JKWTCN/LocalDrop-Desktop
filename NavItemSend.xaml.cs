@@ -1,9 +1,14 @@
+using LocalDrop.Sender;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Devices.Enumeration;
@@ -17,17 +22,68 @@ using Windows.Storage.Pickers;
 
 namespace LocalDrop
 {
+
     public class DeviceInfo
     {
         public string DeviceName { get; set; }
         public string DeviceId { get; set; }
     }
 
+    public static class FileTypeToIconConverter
+    {
+        public static Symbol Convert(FileType fileType)
+        {
+            return fileType switch
+            {
+                FileType.TEXT => Symbol.Document,
+                FileType.IMG => Symbol.Pictures,
+                FileType.FILE => Symbol.Document,
+                FileType.AUDIO => Symbol.Audio,
+                FileType.VIDEO => Symbol.Video,
+                FileType.DIR => Symbol.Folder,
+                FileType.QUICK_MESSAGE => Symbol.Message,
+                _ => Symbol.Document
+            };
+        }
+    }
+    public static class FileSizeConverter
+    {
+        public static string Convert(long bytes)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB" };
+            int order = 0;
+            while (bytes >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                bytes /= 1024;
+            }
+            return $"{bytes:0.##} {sizes[order]}";
+        }
+    }
+
+
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
     public sealed partial class NavItemSend : Page
     {
+        private ObservableCollection<SendTransferItem> ActiveSendTransfers { get; } = new();
+        private double _totalProgress;
+        private string _totalProgressText;
+
+        public double TotalProgress
+        {
+            get => _totalProgress;
+            set => SetProperty(ref _totalProgress, value);
+        }
+
+        public string TotalProgressText
+        {
+            get => _totalProgressText;
+            set => SetProperty(ref _totalProgressText, value);
+        }
+
+
         ObservableCollection<DeviceInfo> deviceInfoes = new ObservableCollection<DeviceInfo>();
         ObservableCollection<FileInfo> fileInfoes = new ObservableCollection<FileInfo>();
 
@@ -37,8 +93,39 @@ namespace LocalDrop
         public NavItemSend()
         {
             this.InitializeComponent();
+            deviceInfoes.Clear();
             NearbyDevice.ItemsSource = deviceInfoes;
             BeginScanner();
+        }
+
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            base.OnNavigatedFrom(e);
+            CleanupResources();
+        }
+        private void CleanupResources()
+        {
+            Debug.WriteLine("开始清理资源");
+            // 1. 停止设备扫描和广播
+            if (_deviceWatcher != null)
+            {
+                StopWatcher(); // 调用现有的停止方法
+            }
+            if (_publisher.Status == WiFiDirectAdvertisementPublisherStatus.Started)
+            {
+                _publisher.Stop();
+            }
+
+            // 2. 断开WiFiDirect连接
+            Disconnect();
+
+
+            ActiveSendTransfers.Clear();
+
+            // 3. 清理文件列表
+            fileInfoes.Clear();
+
+
         }
 
         private async void WaitSendFileListView_ItemClick(object sender, ItemClickEventArgs e)
@@ -115,9 +202,9 @@ namespace LocalDrop
                         var the_text = textBox.Text;
                         fileInfoes.Add(new FileInfo()
                         {
-                            fileName = "TEXT",
+                            fileName = "QUICK_MESSAGE.txt",
                             fileSize = the_text.Length,
-                            fileType = FileType.TEXT,
+                            fileType = FileType.QUICK_MESSAGE,
                             info = the_text,
 
                         });
@@ -147,7 +234,6 @@ namespace LocalDrop
                                         fileSize = fileSize,
                                         fileType = FileType.FILE,
                                         info = file.Path,
-
                                     });
                                     Debug.WriteLine($"添加剪切板文件：{file.Name}, 地址：{file.Path}");
                                     contentAdded = true;
@@ -163,11 +249,10 @@ namespace LocalDrop
                             {
                                 fileInfoes.Add(new FileInfo()
                                 {
-                                    fileName = "TEXT",
+                                    fileName = "QUICK_MESSAGE.txt",
                                     fileSize = textContent.Length,
-                                    fileType = FileType.TEXT,
+                                    fileType = FileType.QUICK_MESSAGE,
                                     info = textContent,
-
                                 });
                                 Debug.WriteLine($"添加剪切板文本：{textContent}");
                                 contentAdded = true;
@@ -246,7 +331,29 @@ namespace LocalDrop
             if (NearbyDevice.SelectedItem is DeviceInfo selectedDevice)
             {
                 System.Diagnostics.Debug.WriteLine($"选中设备：{selectedDevice.DeviceName} (ID: {selectedDevice.DeviceId})");
-                _ = Connect(selectedDevice.DeviceId);
+                if (fileInfoes.Count != 0)
+                {
+                    _ = Connect(selectedDevice.DeviceId);
+                    NearbyDevice.SelectedIndex = -1;
+                }
+                else
+                {
+                    //todo 添加弹窗 请选择要发送的文件
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        ContentDialog dialog = new ContentDialog
+                        {
+                            Title = "文件未选择",
+                            Content = "请先选择要发送的文件",
+                            CloseButtonText = "确定",
+                            XamlRoot = this.Content.XamlRoot // 确保在WinUI中正确设置XamlRoot
+                        };
+
+                        _ = dialog.ShowAsync();
+                        NearbyDevice.SelectedIndex = -1;
+                    });
+                }
+
             }
         }
         private void StopWatcher()
@@ -311,7 +418,7 @@ namespace LocalDrop
         private async System.Threading.Tasks.Task<String> Connect(string deviceId)
         {
             string result = "";
-
+            Debug.WriteLine("开始连接并发送文件");
             try
             {
                 // No device ID specified.
@@ -334,32 +441,99 @@ namespace LocalDrop
                 if (EndpointPairCollection.Count > 0)
                 {
                     var endpointPair = EndpointPairCollection[0];
-                    result = "Local IP address " + endpointPair.LocalHostName.ToString() +
-                        " connected to remote IP address " + endpointPair.RemoteHostName.ToString();
                     if (fileInfoes.Count != 0)
                     {
                         FileSender fileSender = new FileSender();
-                        foreach (var fileInfo in fileInfoes)
+                        fileSender.ProgressChanged += OnSendProgressChanged;
+                        fileSender.TransferCompleted += OnSendCompleted;
+                        fileSender.DispatcherQueue = DispatcherQueue;
+                        // 初始化发送任务
+                        var transfers = fileInfoes.Select(f => new SendTransferItem
                         {
-                            DispatcherQueue.TryEnqueue(() =>
-                            {
-                                NowSendFileText.Text = $"正在发送{fileInfo.fileName}";
-                            });
-                            Debug.WriteLine($"开始发送{fileInfo.fileName}");
-                            fileSender.SendFile(fileInfo, endpointPair.RemoteHostName.ToString(), 27431);
-                            DispatcherQueue.TryEnqueue(() =>
-                            {
-                                NowSendFileText.Text = $"传输完成{fileInfo.fileName}，等待发送下一个文件。";
-                                fileInfoes.Remove(fileInfo);
+                            FileName = f.fileName,
+                            FilePath = f.info,
+                            FileSize = f.fileSize,
+                            Status = TransferSendingStatus.Pending
+                        }).ToList();
 
-                            });
+                        foreach (var transfer in transfers)
+                        {
+                            ActiveSendTransfers.Add(transfer);
                         }
+
+                        // 显示进度弹窗
                         DispatcherQueue.TryEnqueue(() =>
                         {
-                            NowSendFileText.Text = $"发送列表";
+                            _ = SendProgressDialog.ShowAsync();
                         });
+                        UpdateTotalProgress();
 
+                        // 开始发送（异步）
+                        _ = Task.Run(async () =>
+                        {
+                            foreach (var (fileInfo, transfer) in fileInfoes.Zip(transfers, (f, t) => (f, t)))
+                            {
+                                try
+                                {
+                                    DispatcherQueue.TryEnqueue(() =>
+                                   {
+                                       transfer.Status = TransferSendingStatus.Sending;
+                                   });
+
+                                    await fileSender.SendFileAsync(fileInfo,
+                                        endpointPair.RemoteHostName.ToString(),
+                                        27431,
+                                        transfer);
+
+                                    DispatcherQueue.TryEnqueue(() =>
+                                   {
+                                       fileInfoes.Remove(fileInfo);
+                                       transfer.Status = TransferSendingStatus.Completed;
+                                   });
+                                }
+                                catch (Exception ex)
+                                {
+                                    DispatcherQueue.TryEnqueue(() =>
+                                   {
+                                       transfer.Status = TransferSendingStatus.Failed;
+                                   });
+                                    Debug.WriteLine($"发送失败: {ex.Message}");
+                                }
+                                finally
+                                {
+                                    UpdateTotalProgress();
+                                }
+                            }
+                        });
                     }
+
+                    //var endpointPair = EndpointPairCollection[0];
+                    //result = "Local IP address " + endpointPair.LocalHostName.ToString() +
+                    //    " connected to remote IP address " + endpointPair.RemoteHostName.ToString();
+                    //if (fileInfoes.Count != 0)
+                    //{
+                    //    FileSender fileSender = new FileSender();
+                    //    foreach (var fileInfo in fileInfoes)
+                    //    {
+                    //        DispatcherQueue.TryEnqueue(() =>
+                    //        {
+                    //            NowSendFileText.Text = $"正在发送{fileInfo.fileName}";
+                    //        });
+                    //        Debug.WriteLine($"开始发送{fileInfo.fileName}");
+                    //        fileSender.SendFile(fileInfo, endpointPair.RemoteHostName.ToString(), 27431);
+                    //        DispatcherQueue.TryEnqueue(() =>
+                    //        {
+                    //            NowSendFileText.Text = $"传输完成{fileInfo.fileName}，等待发送下一个文件。";
+                    //            fileInfoes.Remove(fileInfo);
+
+                    //        });
+                    //    }
+                    //    DispatcherQueue.TryEnqueue(() =>
+                    //    {
+                    //        NowSendFileText.Text = $"发送列表";
+                    //    });
+
+                    //}
                 }
                 else
                 {
@@ -375,21 +549,75 @@ namespace LocalDrop
             Debug.WriteLine(result);
             return result;
         }
+        private void OnSendProgressChanged(SendTransferItem transferItem)
+        {
+            UpdateTotalProgress();
+        }
+
+        private void OnSendCompleted(SendTransferItem transferItem)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (ActiveSendTransfers.All(t => t.Status == TransferSendingStatus.Completed ||
+                                               t.Status == TransferSendingStatus.Failed))
+                {
+                    SendProgressDialog.Hide();
+                }
+            });
+        }
+
+        private void UpdateTotalProgress()
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (ActiveSendTransfers.Count == 0) return;
+
+                var totalSize = ActiveSendTransfers.Sum(t => t.FileSize);
+                var sentSize = ActiveSendTransfers.Sum(t => t.BytesSent);
+                TotalProgress = (sentSize / (double)totalSize) * 100;
+                TotalProgressText = $"{TotalProgress:0.0}% ({sentSize:N0}/{totalSize:N0} bytes)";
+            });
+        }
+
+        private void OnSendDialogClosing(ContentDialog sender, ContentDialogClosingEventArgs args)
+        {
+            if (ActiveSendTransfers.Any(t => t.Status == TransferSendingStatus.Sending))
+            {
+                args.Cancel = true;
+                SendProgressDialog.Hide();
+            }
+        }
+
+        // 添加INotifyPropertyChanged支持
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        protected bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(storage, value)) return false;
+            storage = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
 
         private void OnConnectionChanged(object sender, object arg)
         {
-            Windows.Devices.WiFiDirect.WiFiDirectConnectionStatus status =
-                (Windows.Devices.WiFiDirect.WiFiDirectConnectionStatus)arg;
+            if (arg != null)
+            {
+                Windows.Devices.WiFiDirect.WiFiDirectConnectionStatus status =
+                      (Windows.Devices.WiFiDirect.WiFiDirectConnectionStatus)arg;
 
-            if (status == Windows.Devices.WiFiDirect.WiFiDirectConnectionStatus.Connected)
-            {
-                // Connection successful.
-                Debug.WriteLine($"Connected: {status}");
-            }
-            else
-            {
-                // Disconnected.
-                Disconnect();
+                if (status == Windows.Devices.WiFiDirect.WiFiDirectConnectionStatus.Connected)
+                {
+                    // Connection successful.
+                    Debug.WriteLine($"Connected: {status}");
+                }
+                else
+                {
+                    // Disconnected.
+                    Disconnect();
+                }
             }
         }
 
@@ -401,35 +629,5 @@ namespace LocalDrop
             }
         }
     }
-    public static class FileTypeToIconConverter
-    {
-        public static Symbol Convert(FileType fileType)
-        {
-            return fileType switch
-            {
-                FileType.TEXT => Symbol.Document,
-                FileType.IMG => Symbol.Pictures,
-                FileType.FILE => Symbol.Document,
-                FileType.AUDIO => Symbol.Audio,
-                FileType.VIDEO => Symbol.Video,
-                FileType.DIR => Symbol.Folder,
-                FileType.QUICK_MESSAGE => Symbol.Message,
-                _ => Symbol.Document
-            };
-        }
-    }
-    public static class FileSizeConverter
-    {
-        public static string Convert(long bytes)
-        {
-            string[] sizes = { "B", "KB", "MB", "GB" };
-            int order = 0;
-            while (bytes >= 1024 && order < sizes.Length - 1)
-            {
-                order++;
-                bytes /= 1024;
-            }
-            return $"{bytes:0.##} {sizes[order]}";
-        }
-    }
+
 }
