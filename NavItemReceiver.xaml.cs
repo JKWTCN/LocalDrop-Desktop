@@ -19,7 +19,7 @@ namespace LocalDrop
     public sealed partial class NavItemReceiver : Page
     {
         WiFiDirectAdvertisementPublisher _publisher = new WiFiDirectAdvertisementPublisher();
-        DeviceWatcher _deviceWatcher = null;
+        DeviceWatcher? _deviceWatcher = null;
         bool _fWatcherStarted = false;
         FileReceiver receiver = new FileReceiver();
         WiFiDirectConnectionListener connectionListener = new WiFiDirectConnectionListener();
@@ -163,11 +163,11 @@ namespace LocalDrop
                 _publisher.Advertisement.IsAutonomousGroupOwnerEnabled = true;
                 _publisher.Advertisement.ListenStateDiscoverability =
                     WiFiDirectAdvertisementListenStateDiscoverability.Normal;
-                Debug.WriteLine("开始广播");
+                Debug.WriteLine("开始扫描");
                 _publisher.Start();
                 if (_publisher.Status != WiFiDirectAdvertisementPublisherStatus.Started)
                 {
-                    Debug.WriteLine("广播失败");
+                    Debug.WriteLine("扫描失败");
                 }
 
                 //AssociationEndpoint 关联的终结点。 这包括其他电脑、平板电脑和手机。

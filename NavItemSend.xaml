@@ -59,7 +59,7 @@
         <!-- 发送列表 -->
         <TextBlock Grid.Row="2" Style="{StaticResource HeaderStyle}" Name="NowSendFileText"  Text="发送列表"/>
         <ListView Grid.Row="3" Name="WaitSendFileListView" 
-          Style="{StaticResource FluentListBox}"
+        AllowDrop="True"
           ItemsSource="{x:Bind fileInfoes}"
           IsItemClickEnabled="True"
           ItemClick="WaitSendFileListView_ItemClick">
@@ -99,7 +99,7 @@
         </ListView>
         <!-- 附近设备 -->
         <TextBlock Grid.Row="4" Style="{StaticResource HeaderStyle}" Text="附近设备"/>
-        <ListView Grid.Row="5" Name="NearbyDevice" Style="{StaticResource FluentListBox}" SelectionChanged="NearbyDevice_SelectionChanged"  >
+        <ListView Grid.Row="5" Name="NearbyDevice"  SelectionChanged="NearbyDevice_SelectionChanged"  >
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <Border Margin="8" Padding="12,8" CornerRadius="4" Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}">

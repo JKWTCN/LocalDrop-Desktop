@@ -15,6 +15,8 @@ namespace LocalDrop
         {
             this.InitializeComponent();
             ContentFrame.Navigate(typeof(NavItemReceiver));
+
+            //ContentFrame.Navigate(typeof(NavItemSend));
         }
 
         private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)

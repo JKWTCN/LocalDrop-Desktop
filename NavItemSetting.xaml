@@ -7,9 +7,52 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+   >
 
     <Grid>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <TextBlock TextAlignment="Center" Foreground="Red" FontSize="20">此页还在施工中。。。</TextBlock>
+            <!-- 头像 -->
+            <Image Source="/Assets/avatar.jpg" Stretch="UniformToFill"  Width="150" Height="150"/>
+            <TextBlock TextAlignment="Center" FontSize="20">浮云战争</TextBlock>
+            <StackPanel Orientation="Vertical" Spacing="15">
+                <!-- GitHub 按钮 -->
+                <Button Content="GitHub 主页" 
+                        Width="200" Height="40"
+                        Background="#24292E" Foreground="White"
+                        FontSize="16" FontWeight="SemiBold"
+                        Click="GitHubButton_Click"
+                      >
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}"
+                                    CornerRadius="5">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
 
+                <!-- 哔哩哔哩 按钮 -->
+                <Button Content="哔哩哔哩 主页" 
+                        Width="200" Height="40"
+                        Background="#00A1D6" Foreground="White"
+                        FontSize="16" FontWeight="SemiBold"
+                        Click="BilibiliButton_Click"
+                        >
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}"
+                                    CornerRadius="5">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </StackPanel>
+        </StackPanel>
     </Grid>
 </Page>

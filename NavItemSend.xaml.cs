@@ -25,8 +25,8 @@ namespace LocalDrop
 
     public class DeviceInfo
     {
-        public string DeviceName { get; set; }
-        public string DeviceId { get; set; }
+        public required string DeviceName { get; set; }
+        public required string DeviceId { get; set; }
     }
 
     public static class FileTypeToIconConverter
@@ -68,8 +68,8 @@ namespace LocalDrop
     public sealed partial class NavItemSend : Page
     {
         private ObservableCollection<SendTransferItem> ActiveSendTransfers { get; } = new();
-        private double _totalProgress;
-        private string _totalProgressText;
+        private double _totalProgress = 0;
+        private string _totalProgressText = "";
 
         public double TotalProgress
         {
@@ -88,16 +88,82 @@ namespace LocalDrop
         ObservableCollection<FileInfo> fileInfoes = new ObservableCollection<FileInfo>();
 
         WiFiDirectAdvertisementPublisher _publisher = new WiFiDirectAdvertisementPublisher();
-        DeviceWatcher _deviceWatcher = null;
+        DeviceWatcher? _deviceWatcher;
         bool _fWatcherStarted = false;
         public NavItemSend()
         {
             this.InitializeComponent();
             deviceInfoes.Clear();
             NearbyDevice.ItemsSource = deviceInfoes;
+            WaitSendFileListView.DragOver += OnDragOver;
+            WaitSendFileListView.Drop += OnDrop;
+
             BeginScanner();
         }
+        private async void OnDragOver(object sender, DragEventArgs e)
+        {
+            // 检查是否包含可接受的文件类型
+            if (e.DataView.Contains(StandardDataFormats.StorageItems))
+            {
+                // 获取拖动的文件信息
+                var deferral = e.GetDeferral();
+                try
+                {
+                    var items = await e.DataView.GetStorageItemsAsync();
+                    if (items.Count > 0)
+                    {
+                        e.AcceptedOperation = DataPackageOperation.Copy;
+                        e.DragUIOverride.Caption = "添加文件到发送列表";
+                        e.DragUIOverride.IsGlyphVisible = true;
+                    }
+                }
+                finally
+                {
+                    deferral.Complete();
+                }
+            }
+        }
 
+        private async void OnDrop(object sender, DragEventArgs e)
+        {
+            if (e.DataView.Contains(StandardDataFormats.StorageItems))
+            {
+                var deferral = e.GetDeferral();
+                try
+                {
+                    var items = await e.DataView.GetStorageItemsAsync();
+                    foreach (var item in items)
+                    {
+                        if (item is StorageFile file)
+                        {
+                            var properties = await file.GetBasicPropertiesAsync();
+                            long fileSize = (long)properties.Size;
+
+                            // 确保在UI线程更新集合
+                            DispatcherQueue.TryEnqueue(() =>
+                            {
+                                fileInfoes.Add(new FileInfo()
+                                {
+                                    fileName = file.Name,
+                                    fileSize = fileSize,
+                                    fileType = FileType.FILE,
+                                    info = file.Path
+                                });
+                            });
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"拖放文件错误: {ex.Message}");
+                    await ShowMessageDialog($"无法添加文件: {ex.Message}");
+                }
+                finally
+                {
+                    deferral.Complete();
+                }
+            }
+        }
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             base.OnNavigatedFrom(e);
@@ -368,7 +434,7 @@ namespace LocalDrop
         }
 
         //#region DeviceWatcherEvents
-        private async void OnDeviceAdded(DeviceWatcher deviceWatcher, DeviceInformation deviceInfo)
+        private void OnDeviceAdded(DeviceWatcher deviceWatcher, DeviceInformation deviceInfo)
         {
             DispatcherQueue.TryEnqueue(() =>
             {
@@ -386,7 +452,7 @@ namespace LocalDrop
 
         }
 
-        private async void OnDeviceRemoved(
+        private void OnDeviceRemoved(
             DeviceWatcher deviceWatcher,
             DeviceInformationUpdate deviceInfoUpdate
         )
@@ -395,7 +461,7 @@ namespace LocalDrop
 
         }
 
-        private async void OnDeviceUpdated(
+        private void OnDeviceUpdated(
             DeviceWatcher deviceWatcher,
             DeviceInformationUpdate deviceInfoUpdate
         )
@@ -413,7 +479,7 @@ namespace LocalDrop
         }
         //#endregion
 
-        Windows.Devices.WiFiDirect.WiFiDirectDevice wfdDevice;
+        Windows.Devices.WiFiDirect.WiFiDirectDevice? wfdDevice;
 
         private async System.Threading.Tasks.Task<String> Connect(string deviceId)
         {
@@ -589,9 +655,11 @@ namespace LocalDrop
         }
 
         // 添加INotifyPropertyChanged支持
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         protected bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string propertyName = null)
         {
