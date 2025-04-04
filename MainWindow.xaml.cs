@@ -1,5 +1,6 @@
 using H.NotifyIcon;
 using H.NotifyIcon.Core;
+using H.NotifyIcon.EfficiencyMode;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -30,7 +31,7 @@ namespace LocalDrop
         {
             this.Show();
             this.Activate();
-            TrayIcon.Visibility = Visibility.Visible;
+            TrayIcon.Visibility = Visibility.Collapsed;
         });
         public ICommand CloseWindowCommand => new RelayCommand(() =>
         {
@@ -46,7 +47,8 @@ namespace LocalDrop
             this.AppWindow.SetIcon(GetCurrentFile("Assets\\LocalDrop.ico"));
 
             TrayIcon.ContextFlyout = TrayMenu;
-            this.TrayIcon.Visibility = Visibility.Visible;
+            EfficiencyModeUtilities.SetEfficiencyMode(false);
+            //this.TrayIcon.Visibility = Visibility.Visible;
             // 处理窗口关闭事件
             this.Closed += (sender, args) =>
             {

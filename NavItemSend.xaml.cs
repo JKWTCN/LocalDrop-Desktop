@@ -172,7 +172,7 @@ namespace LocalDrop
         }
         private void CleanupResources()
         {
-            Debug.WriteLine("开始清理资源");
+            Debug.WriteLine("开始清理发送资源");
             // 1. 停止设备扫描和广播
             if (_deviceWatcher != null)
             {

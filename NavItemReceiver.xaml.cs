@@ -45,7 +45,7 @@ namespace LocalDrop
         }
         private void CleanupResources()
         {
-            Debug.WriteLine("清理资源");
+            Debug.WriteLine("清理接收资源");
             // 1. 停止WiFi广播
             if (_publisher.Status == WiFiDirectAdvertisementPublisherStatus.Started)
             {
@@ -164,11 +164,11 @@ namespace LocalDrop
                 _publisher.Advertisement.IsAutonomousGroupOwnerEnabled = true;
                 _publisher.Advertisement.ListenStateDiscoverability =
                     WiFiDirectAdvertisementListenStateDiscoverability.Normal;
-                Debug.WriteLine("开始扫描");
+                Debug.WriteLine("开始广播");
                 _publisher.Start();
                 if (_publisher.Status != WiFiDirectAdvertisementPublisherStatus.Started)
                 {
-                    Debug.WriteLine("扫描失败");
+                    Debug.WriteLine("广播失败");
                 }
 
                 //AssociationEndpoint 关联的终结点。 这包括其他电脑、平板电脑和手机。
@@ -181,6 +181,7 @@ namespace LocalDrop
                     new string[] { "System.Devices.WiFiDirect.InformationElements" }
                 );
                 connectionListener.ConnectionRequested += ConnectionRequestedHandler;
+                Debug.WriteLine("开始监听");
             }
             else
             {
@@ -198,23 +199,25 @@ namespace LocalDrop
             var request = args.GetConnectionRequest();
             try
             {
-                var device = await WiFiDirectDevice.FromIdAsync(request.DeviceInformation.Id);
-                if (device.ConnectionStatus == WiFiDirectConnectionStatus.Connected)
+                //var device = await WiFiDirectDevice.FromIdAsync(request.DeviceInformation.Id);
+                //if (device == null)
+                //    return;
+                //if (device.ConnectionStatus == WiFiDirectConnectionStatus.Connected)
+                //{
+                //    var endpointPairs = device.GetConnectionEndpointPairs();
+                //    foreach (var pair in endpointPairs)
+                //    {
+                // 启动文件接收器
+                if (receiver.IsListening == false)
                 {
-                    var endpointPairs = device.GetConnectionEndpointPairs();
-                    foreach (var pair in endpointPairs)
-                    {
-                        // 启动文件接收器
-                        if (receiver.IsListening == false)
-                        {
-                            Debug.WriteLine($"LocalServiceName:{pair.LocalServiceName} RemoteServiceName:{pair.RemoteServiceName}");
-                            Debug.WriteLine($"LocalHostName:{pair.LocalHostName} RemoteHostName:{pair.RemoteHostName}");
+                    //Debug.WriteLine($"LocalServiceName:{pair.LocalServiceName} RemoteServiceName:{pair.RemoteServiceName}");
+                    //Debug.WriteLine($"LocalHostName:{pair.LocalHostName} RemoteHostName:{pair.RemoteHostName}");
 
-                            await receiver.StartAsync(port);
+                    await receiver.StartAsync(port);
 
-                        }
-                    }
                 }
+                //    }
+                //}
             }
             catch (Exception ex)
             {
