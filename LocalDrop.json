@@ -1,4 +1,7 @@
 ﻿{
   "save_path": "D:\\LocalDrop",
-  "port": 27431
+  "port": 27431,
+  "default_close": true,
+  "start_open": false,
+  "start_open_quiet": false
 }

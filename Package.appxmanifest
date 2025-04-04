@@ -53,4 +53,5 @@
     <Capability Name="privateNetworkClientServer"/>
     <DeviceCapability Name="proximity"/>
   </Capabilities>
+	
 </Package>

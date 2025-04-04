@@ -7,56 +7,115 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
-   >
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid>
+        <StackPanel VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+            <StackPanel Orientation="Horizontal"
+                        Spacing="10"
+                        VerticalAlignment="Center">
+                <TextBlock Text="默认保存路径:"
+                           VerticalAlignment="Center"
+                           FontSize="16"/>
+                <TextBox x:Name="SavePathTextBox"
+                         Width="300"
+                         Height="30"
+                         Text=""/>
+                <Button Content="浏览..."
+                        Width="80"
+                        Height="30"
+                        Click="BrowseFolderButton_Click"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal"
+                        Spacing="10"
+                        VerticalAlignment="Center">
+                <TextBlock Text="端口:"
+                           VerticalAlignment="Center"
+                           FontSize="16"/>
+                <TextBox x:Name="SocketTextBox"
+                         Width="300"
+                         Height="30"
+                         Text=""/>
+                <Button Content="保存"
+                        Width="80"
+                        Height="30"
+                        Click="SocketButton_Click"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal"
+                        Spacing="10"
+                        VerticalAlignment="Center"
+                        Margin="0,15,0,0">
+                <TextBlock Text="关闭时最小化到托盘:"
+                           VerticalAlignment="Center"
+                           FontSize="16"/>
+                <CheckBox x:Name="MinimizeToTrayToggle"
+                          Checked="MinimizeToTrayToggle_Checked"
+                          Unchecked="MinimizeToTrayToggle_Unchecked"
+                          Margin="10,0,0,0"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal"
+                        Spacing="10"
+                        VerticalAlignment="Center"
+                        Margin="0,15,0,0">
+                <TextBlock Text="开机自启(需要以管理员模式启动):"
+                           VerticalAlignment="Center"
+                           FontSize="16"/>
+                <CheckBox x:Name="cb_start_open"
+                          Checked="cb_start_open_Checked"
+                          Unchecked="cb_start_open_Unchecked"
+                          Margin="10,0,0,0"/>
+            </StackPanel>
+            <!--<StackPanel Orientation="Horizontal"
+                            Spacing="10"
+                            VerticalAlignment="Center"
+                            Margin="0,15,0,0">
+                <TextBlock Text="开机静默自启:"
+                               VerticalAlignment="Center"
+                               FontSize="16"/>
+                <CheckBox x:Name="cb_start_open_quiet"
+                              Checked="cb_start_open_quiet_Checked"
+                              Unchecked="cb_start_open_quiet_Unchecked"
+                              Margin="10,0,0,0"/>
+            </StackPanel>-->
 
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                <TextBlock Text="默认保存路径:" VerticalAlignment="Center" FontSize="16"/>
-                <TextBox x:Name="SavePathTextBox" Width="300" Height="30" 
-             Text=""/>
-                <Button Content="浏览..." Width="80" Height="30" Click="BrowseFolderButton_Click"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                <TextBlock Text="端口:" VerticalAlignment="Center" FontSize="16"/>
-                <TextBox x:Name="SocketTextBox" Width="300" Height="30" 
- Text=""/>
-                <Button Content="保存" Width="80" Height="30" Click="SocketButton_Click"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Spacing="15">
+            <StackPanel Orientation="Horizontal"
+                            Spacing="15">
                 <!-- GitHub 按钮 -->
-                <Button Content="GitHub 主页" 
-                        Width="200" Height="40"
-                        Background="#24292E" Foreground="White"
-                        FontSize="16" FontWeight="SemiBold"
-                        Click="GitHubButton_Click"
-                      >
+                <Button Content="GitHub 主页"
+                            Width="200"
+                            Height="40"
+                            Background="#24292E"
+                            Foreground="White"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Click="GitHubButton_Click">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border Background="{TemplateBinding Background}"
-                                    CornerRadius="5">
+                                        CornerRadius="5">
                                 <ContentPresenter HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center"/>
+                                                      VerticalAlignment="Center"/>
                             </Border>
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
 
                 <!-- 哔哩哔哩 按钮 -->
-                <Button Content="哔哩哔哩 主页" 
-                        Width="200" Height="40"
-                        Background="#00A1D6" Foreground="White"
-                        FontSize="16" FontWeight="SemiBold"
-                        Click="BilibiliButton_Click"
-                        >
+                <Button Content="哔哩哔哩 主页"
+                            Width="200"
+                            Height="40"
+                            Background="#00A1D6"
+                            Foreground="White"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Click="BilibiliButton_Click">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border Background="{TemplateBinding Background}"
-                                    CornerRadius="5">
+                                        CornerRadius="5">
                                 <ContentPresenter HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center"/>
+                                                      VerticalAlignment="Center"/>
                             </Border>
                         </ControlTemplate>
                     </Button.Template>

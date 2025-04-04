@@ -1,4 +1,5 @@
 ﻿using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
 using Newtonsoft.Json;
 using System;
 using System.Diagnostics;
@@ -132,6 +133,17 @@ namespace LocalDrop.Receiver
 
                             }
                             Debug.WriteLine($"接收成功,文件位置为：{savePath}");
+                            // 传输完成后确保托盘图标状态
+                            DispatcherQueue.TryEnqueue(() =>
+                            {
+                                transferItem.Status = TransferReceivingStatus.Completed;
+                                FileTransferCompleted?.Invoke(transferItem);
+
+                                if (Window.Current is MainWindow mainWindow)
+                                {
+                                    mainWindow.EnsureTrayIconVisible();
+                                }
+                            });
                         }
                     }
                     else

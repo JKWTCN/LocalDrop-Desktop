@@ -5,18 +5,32 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:LocalDrop"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:tb="using:H.NotifyIcon"
     mc:Ignorable="d"
     Title="LocalDrop">
-
-    <NavigationView PaneDisplayMode="Left" SelectionChanged="NavigationView_SelectionChanged"  IsSettingsVisible="false" IsBackButtonVisible="Collapsed">
-        <NavigationView.MenuItems>
-            <NavigationViewItem Content="接收" Icon="Read"  Tag="NavItemReceiver"/>
-            <NavigationViewItem Content="发送" Icon="Send" Tag="NavItemSend"/>
-            <NavigationViewItem Content="设置" Icon="Setting" Tag="NavItemSetting"/>
-        </NavigationView.MenuItems>
-        <Frame x:Name="ContentFrame"/>
-    </NavigationView>
-
-
+    <Grid>
+        <Grid.Resources>
+            <BitmapImage x:Key="TrayIcon" UriSource="Assets/LocalDrop.ico" />
+            <MenuFlyout x:Name="TrayMenu" >
+                <MenuFlyoutItem Text="打开" x:Name="OpenMenuItem"  Command="{x:Bind ShowWindowCommand}"/>
+                <MenuFlyoutSeparator/>
+                <MenuFlyoutItem Text="退出" x:Name="ExitMenuItem"  Command="{x:Bind CloseWindowCommand}"/>
+            </MenuFlyout>
+        </Grid.Resources>
+        <NavigationView PaneDisplayMode="Left" SelectionChanged="NavigationView_SelectionChanged"  IsSettingsVisible="false" IsBackButtonVisible="Collapsed">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="接收" Icon="Read"  Tag="NavItemReceiver"/>
+                <NavigationViewItem Content="发送" Icon="Send" Tag="NavItemSend"/>
+                <NavigationViewItem Content="设置" Icon="Setting" Tag="NavItemSetting"/>
+            </NavigationView.MenuItems>
+            <Frame x:Name="ContentFrame"/>
+        </NavigationView>
+        <tb:TaskbarIcon x:Name="TrayIcon"
+                    IconSource="{StaticResource TrayIcon}"
+                    ToolTipText="我的应用"
+                    ContextFlyout="{StaticResource TrayMenu}"
+                    Visibility="Collapsed"
+                    DoubleClickCommand="{x:Bind ShowWindowCommand}"/>
+    </Grid>
 </Window>
+

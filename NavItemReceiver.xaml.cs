@@ -11,7 +11,6 @@ using System.Linq;
 using System.Threading;
 using Windows.Devices.Enumeration;
 using Windows.Devices.WiFiDirect;
-using Windows.Storage;
 
 
 namespace LocalDrop
@@ -28,6 +27,7 @@ namespace LocalDrop
         private ObservableCollection<FileTransferItem> ActiveTransfers { get; } = new ObservableCollection<FileTransferItem>();
         private SemaphoreSlim _dialogLock = new SemaphoreSlim(1);
         private bool _isDialogShowing;
+
         public NavItemReceiver()
         {
             this.InitializeComponent();
@@ -245,8 +245,8 @@ namespace LocalDrop
         {
             try
             {
-                var localFolder = ApplicationData.Current.LocalFolder;
-                var historyFile = Path.Combine(localFolder.Path, HistoryFileName);
+                var localFolder = Environment.CurrentDirectory;
+                var historyFile = Path.Combine(localFolder, HistoryFileName);
 
                 if (File.Exists(historyFile))
                 {
@@ -277,8 +277,13 @@ namespace LocalDrop
                 };
 
                 ReceivedFiles.Insert(0, historyItem);
-                SaveHistory();
             });
+            SaveHistory();
+            // 确保主窗口和托盘图标状态正确
+            if (Window.Current is MainWindow mainWindow)
+            {
+                mainWindow.EnsureTrayIconVisible();
+            }
 
         }
 
@@ -288,10 +293,14 @@ namespace LocalDrop
             {
                 DispatcherQueue.TryEnqueue(() =>
                 {
-                    var localFolder = ApplicationData.Current.LocalFolder;
-                    var historyFile = Path.Combine(localFolder.Path, HistoryFileName);
+                    var localFolder = Environment.CurrentDirectory;
+                    var historyFile = Path.Combine(localFolder, HistoryFileName);
                     var json = JsonConvert.SerializeObject(ReceivedFiles);
                     File.WriteAllText(historyFile, json);
+                    if (Window.Current is MainWindow mainWindow)
+                    {
+                        mainWindow.EnsureTrayIconVisible();
+                    }
                 });
             }
             catch (Exception ex)
