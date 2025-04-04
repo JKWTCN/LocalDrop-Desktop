@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading;
 using Windows.Devices.Enumeration;
 using Windows.Devices.WiFiDirect;
+using Windows.Foundation;
 
 
 namespace LocalDrop
@@ -40,8 +41,9 @@ namespace LocalDrop
         }
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
-            base.OnNavigatedFrom(e);
             CleanupResources();
+            base.OnNavigatedFrom(e);
+
         }
         private void CleanupResources()
         {
@@ -165,23 +167,8 @@ namespace LocalDrop
                 _publisher.Advertisement.ListenStateDiscoverability =
                     WiFiDirectAdvertisementListenStateDiscoverability.Normal;
                 Debug.WriteLine("开始广播");
+                _publisher.StatusChanged += PublicStatusChanged;
                 _publisher.Start();
-                if (_publisher.Status != WiFiDirectAdvertisementPublisherStatus.Started)
-                {
-                    Debug.WriteLine("广播失败");
-                }
-
-                //AssociationEndpoint 关联的终结点。 这包括其他电脑、平板电脑和手机。
-                //DeviceInterface 设备接口。
-                WiFiDirectDeviceSelectorType wiFiDirectDeviceSelectorType = WiFiDirectDeviceSelectorType.AssociationEndpoint;
-                //string deviceSelector = WiFiDirectDevice.GetDeviceSelector(wiFiDirectDeviceSelectorType);
-                string deviceSelector = WiFiDirectDevice.GetDeviceSelector(wiFiDirectDeviceSelectorType);
-                _deviceWatcher = DeviceInformation.CreateWatcher(
-                    deviceSelector,
-                    new string[] { "System.Devices.WiFiDirect.InformationElements" }
-                );
-                connectionListener.ConnectionRequested += ConnectionRequestedHandler;
-                Debug.WriteLine("开始监听");
             }
             else
             {
@@ -191,41 +178,76 @@ namespace LocalDrop
             }
 
         }
+
+        private async void PublicStatusChanged(WiFiDirectAdvertisementPublisher sender, WiFiDirectAdvertisementPublisherStatusChangedEventArgs args)
+        {
+            if (args.Status == WiFiDirectAdvertisementPublisherStatus.Started)
+            {
+                Debug.WriteLine("wifiDirect正常开启");
+                //AssociationEndpoint 关联的终结点。 这包括其他电脑、平板电脑和手机。
+                //DeviceInterface 设备接口。
+                //WiFiDirectDeviceSelectorType wiFiDirectDeviceSelectorType = WiFiDirectDeviceSelectorType.AssociationEndpoint;
+                //string deviceSelector = WiFiDirectDevice.GetDeviceSelector(wiFiDirectDeviceSelectorType);
+                //_deviceWatcher = DeviceInformation.CreateWatcher(
+                //    deviceSelector,
+                //    new string[] { "System.Devices.WiFiDirect.InformationElements" }
+                //);
+                //WiFiDirectConnectionListener connectionListener = new WiFiDirectConnectionListener();
+                connectionListener.ConnectionRequested += ConnectionRequestedHandler;
+                //启动文件接收器
+                if (receiver.IsListening == false)
+                {
+                    await receiver.StartAsync(port);
+                }
+            }
+            else
+            {
+                Debug.WriteLine($"wifiDirect状态{args.Status}");
+            }
+        }
         bool is_listen = false;
         private async void ConnectionRequestedHandler(
       WiFiDirectConnectionListener sender,
       WiFiDirectConnectionRequestedEventArgs args)
         {
+            Debug.WriteLine("有连接请求");
             var request = args.GetConnectionRequest();
-            try
-            {
-                //var device = await WiFiDirectDevice.FromIdAsync(request.DeviceInformation.Id);
-                //if (device == null)
-                //    return;
-                //if (device.ConnectionStatus == WiFiDirectConnectionStatus.Connected)
-                //{
-                //    var endpointPairs = device.GetConnectionEndpointPairs();
-                //    foreach (var pair in endpointPairs)
-                //    {
-                // 启动文件接收器
-                if (receiver.IsListening == false)
-                {
-                    //Debug.WriteLine($"LocalServiceName:{pair.LocalServiceName} RemoteServiceName:{pair.RemoteServiceName}");
-                    //Debug.WriteLine($"LocalHostName:{pair.LocalHostName} RemoteHostName:{pair.RemoteHostName}");
-
-                    await receiver.StartAsync(port);
-
-                }
-                //    }
-                //}
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"配对错误: {ex.Message}");
-            }
-
-
+            var device = await WiFiDirectDevice.FromIdAsync(request.DeviceInformation.Id);
+            device.ConnectionStatusChanged += new TypedEventHandler<Windows.Devices.WiFiDirect.WiFiDirectDevice, object>(OnConnectionChanged);
+            //try
+            //{
+            //    if (device == null)
+            //        return;
+            //    if (device.ConnectionStatus == WiFiDirectConnectionStatus.Connected)
+            //    {
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    Debug.WriteLine($"配对错误: {ex.Message}");
+            //}
         }
+
+        private void OnConnectionChanged(WiFiDirectDevice device, object arg)
+        {
+            Windows.Devices.WiFiDirect.WiFiDirectConnectionStatus status =
+                (Windows.Devices.WiFiDirect.WiFiDirectConnectionStatus)arg;
+
+            if (status == Windows.Devices.WiFiDirect.WiFiDirectConnectionStatus.Connected)
+            {
+                var endpointPairs = device.GetConnectionEndpointPairs();
+                foreach (var pair in endpointPairs)
+                {
+                    Debug.WriteLine($"LocalServiceName:{pair.LocalServiceName} RemoteServiceName:{pair.RemoteServiceName}");
+                    Debug.WriteLine($"LocalHostName:{pair.LocalHostName} RemoteHostName:{pair.RemoteHostName}");
+                }
+            }
+            else
+            {
+                Debug.WriteLine("配对失败");
+            }
+        }
+
 
         public void Stop()
         {

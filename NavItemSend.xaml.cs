@@ -167,8 +167,9 @@ namespace LocalDrop
         }
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
-            base.OnNavigatedFrom(e);
             CleanupResources();
+            base.OnNavigatedFrom(e);
+
         }
         private void CleanupResources()
         {
@@ -363,30 +364,8 @@ namespace LocalDrop
             if (_deviceWatcher == null)
             {
                 Debug.WriteLine("开始广播");
+                _publisher.StatusChanged += PublicStatusChanged;
                 _publisher.Start();
-                if (_publisher.Status != WiFiDirectAdvertisementPublisherStatus.Started)
-                {
-                    Debug.WriteLine("广播失败");
-                }
-
-                //AssociationEndpoint 关联的终结点。 这包括其他电脑、平板电脑和手机。
-                //DeviceInterface 设备接口。
-                WiFiDirectDeviceSelectorType wiFiDirectDeviceSelectorType = WiFiDirectDeviceSelectorType.AssociationEndpoint;
-                string deviceSelector = WiFiDirectDevice.GetDeviceSelector(wiFiDirectDeviceSelectorType);
-
-                _deviceWatcher = DeviceInformation.CreateWatcher(
-                    deviceSelector,
-                    new string[] { "System.Devices.WiFiDirect.InformationElements" }
-                );
-
-                _deviceWatcher.Added += OnDeviceAdded;
-                _deviceWatcher.Removed += OnDeviceRemoved;
-                _deviceWatcher.Updated += OnDeviceUpdated;
-                _deviceWatcher.EnumerationCompleted += OnEnumerationCompleted;
-                _deviceWatcher.Stopped += OnStopped;
-                _deviceWatcher.Start();
-
-                _fWatcherStarted = true;
             }
             else
             {
@@ -395,6 +374,33 @@ namespace LocalDrop
                 Debug.WriteLine("停止扫描");
             }
 
+        }
+        private async void PublicStatusChanged(WiFiDirectAdvertisementPublisher sender, WiFiDirectAdvertisementPublisherStatusChangedEventArgs args)
+        {
+            if (args.Status == WiFiDirectAdvertisementPublisherStatus.Started)
+            {
+                //AssociationEndpoint 关联的终结点。 这包括其他电脑、平板电脑和手机。
+                //DeviceInterface 设备接口。
+                WiFiDirectDeviceSelectorType wiFiDirectDeviceSelectorType = WiFiDirectDeviceSelectorType.AssociationEndpoint;
+                string deviceSelector = WiFiDirectDevice.GetDeviceSelector(wiFiDirectDeviceSelectorType);
+                _deviceWatcher = DeviceInformation.CreateWatcher(
+                    deviceSelector,
+                    new string[] { "System.Devices.WiFiDirect.InformationElements" }
+                );
+                _deviceWatcher.Added += OnDeviceAdded;
+                _deviceWatcher.Removed += OnDeviceRemoved;
+                _deviceWatcher.Updated += OnDeviceUpdated;
+                _deviceWatcher.EnumerationCompleted += OnEnumerationCompleted;
+                _deviceWatcher.Stopped += OnStopped;
+                _deviceWatcher.Start();
+                _fWatcherStarted = true;
+
+
+            }
+            else
+            {
+                Debug.WriteLine($"wifiDirect状态{args.Status}");
+            }
         }
 
         private void NearbyDevice_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -443,7 +449,6 @@ namespace LocalDrop
         {
             DispatcherQueue.TryEnqueue(() =>
             {
-
                 var name = deviceInfo.Name;
                 var id = deviceInfo.Id;
                 deviceInfoes.Add(new DeviceInfo()
@@ -493,7 +498,11 @@ namespace LocalDrop
             try
             {
                 // No device ID specified.
-                if (String.IsNullOrEmpty(deviceId)) { return "Please specify a Wi-Fi Direct device ID."; }
+                if (String.IsNullOrEmpty(deviceId))
+                {
+                    Debug.WriteLine("Please specify a Wi-Fi Direct device ID.");
+                    return "Please specify a Wi-Fi Direct device ID.";
+                }
 
                 // Connect to the selected Wi-Fi Direct device.
                 wfdDevice = await Windows.Devices.WiFiDirect.WiFiDirectDevice.FromIdAsync(deviceId);
@@ -501,6 +510,7 @@ namespace LocalDrop
                 if (wfdDevice == null)
                 {
                     result = "Connection to " + deviceId + " failed.";
+                    Debug.WriteLine("Connection to " + deviceId + " failed.");
                 }
 
                 // Register for connection status change notification.

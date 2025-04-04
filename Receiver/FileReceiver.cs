@@ -37,7 +37,7 @@ namespace LocalDrop.Receiver
         }
         public async Task StartAsync(int port = 27431)
         {
-            Debug.WriteLine("开始监听");
+            Debug.WriteLine($"开始监听端口{port}");
             _listener = new StreamSocketListener();
             _listener.ConnectionReceived += OnConnectionReceived;
             await _listener.BindServiceNameAsync(port.ToString());
