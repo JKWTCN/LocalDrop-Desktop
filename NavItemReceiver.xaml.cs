@@ -302,7 +302,7 @@ namespace LocalDrop
             {
                 try
                 {
-                    Process.Start("explorer.exe", $"/select,\"{item.FilePath}\"");
+                    Process.Start("explorer.exe", $"/select,\"{item.FilePath}\\{item.FileName}\"");
                 }
                 catch (Exception ex)
                 {

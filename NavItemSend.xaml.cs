@@ -251,6 +251,10 @@ namespace LocalDrop
                         Debug.WriteLine($"添加文件{selectedFile.Name},大小{fileSize},地址{selectedFile.Path}");
                     }
                 }
+                else if (button == ReScanner)
+                {
+                    deviceInfoes.Clear();
+                }
                 else if (button == SendText)
                 {
                     //todo 弹窗输入文本

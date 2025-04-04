@@ -104,6 +104,11 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <None Update="LocalDrop.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
     <Page Update="NavItemSetting.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

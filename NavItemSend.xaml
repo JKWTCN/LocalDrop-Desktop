@@ -47,12 +47,15 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Button Grid.Column="0" Name="SendFile" Style="{StaticResource ActionButtonStyle}" Content="文件"  Click="Button_Click" ToolTipService.ToolTip="选择发送文件">
             </Button>
             <Button Grid.Column="1"  Name="SendCut" Style="{StaticResource ActionButtonStyle}" Content="剪切板"  Click="Button_Click" ToolTipService.ToolTip="发送剪切板内容">
             </Button>
             <Button Grid.Column="2" Name="SendText" Style="{StaticResource ActionButtonStyle}" Content="信息"  Click="Button_Click" ToolTipService.ToolTip="发送文本信息">
+            </Button>
+            <Button Grid.Column="3" Name="ReScanner" Style="{StaticResource ActionButtonStyle}" Content="重新扫描"  Click="Button_Click" ToolTipService.ToolTip="发送文本信息">
             </Button>
         </Grid>
 

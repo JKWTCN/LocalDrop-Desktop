@@ -18,7 +18,7 @@ namespace LocalDrop.Receiver
 
         private const int HeaderSize = 4; // 4字节长度头
         private StreamSocketListener _listener;
-        private string _saveDirectory = @"D:\LocalDrop";
+        private string _saveDirectory = MySettings.ReadJsonToDictionary()["save_path"].ToString();
         public bool IsListening => _listener != null;
 
         public string SaveDirectory
