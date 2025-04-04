@@ -21,6 +21,7 @@ namespace LocalDrop
             DispatcherQueue.TryEnqueue(() =>
             {
                 SavePathTextBox.Text = MySettings.ReadJsonToDictionary()["save_path"].ToString();
+                SocketTextBox.Text = MySettings.ReadJsonToDictionary()["port"].ToString();
             });
         }
         private async void BrowseFolderButton_Click(object sender, RoutedEventArgs e)
@@ -43,6 +44,12 @@ namespace LocalDrop
             {
                 SavePathTextBox.Text = folder.Path;
             });
+        }
+        private void SocketButton_Click(object sender, RoutedEventArgs e)
+        {
+            var settings = MySettings.ReadJsonToDictionary();
+            settings["port"] = SocketTextBox.Text;
+            MySettings.SaveDictionaryToJson(settings);
         }
 
         private void GitHubButton_Click(object sender, RoutedEventArgs e)

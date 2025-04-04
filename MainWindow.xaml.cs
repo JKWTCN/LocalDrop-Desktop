@@ -9,12 +9,21 @@ namespace LocalDrop
     /// </summary>
     public sealed partial class MainWindow : Window
     {
+        private static string GetCurrentDirectory()
+        {
+            return System.AppDomain.CurrentDomain.BaseDirectory;
+        }
 
+        public static string GetCurrentFile(string filename)
+        {
+            return GetCurrentDirectory() + filename;
+        }
 
         public MainWindow()
         {
             this.InitializeComponent();
             ContentFrame.Navigate(typeof(NavItemReceiver));
+            this.AppWindow.SetIcon(GetCurrentFile("Assets\\LocalDrop.ico"));
 
             //ContentFrame.Navigate(typeof(NavItemSend));
         }

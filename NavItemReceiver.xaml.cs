@@ -18,6 +18,7 @@ namespace LocalDrop
 {
     public sealed partial class NavItemReceiver : Page
     {
+        private int port = int.Parse(MySettings.ReadJsonToDictionary()["port"].ToString());
         WiFiDirectAdvertisementPublisher _publisher = new WiFiDirectAdvertisementPublisher();
         DeviceWatcher? _deviceWatcher = null;
         bool _fWatcherStarted = false;
@@ -209,7 +210,7 @@ namespace LocalDrop
                             Debug.WriteLine($"LocalServiceName:{pair.LocalServiceName} RemoteServiceName:{pair.RemoteServiceName}");
                             Debug.WriteLine($"LocalHostName:{pair.LocalHostName} RemoteHostName:{pair.RemoteHostName}");
 
-                            await receiver.StartAsync(27431);
+                            await receiver.StartAsync(port);
 
                         }
                     }
@@ -285,10 +286,13 @@ namespace LocalDrop
         {
             try
             {
-                var localFolder = ApplicationData.Current.LocalFolder;
-                var historyFile = Path.Combine(localFolder.Path, HistoryFileName);
-                var json = JsonConvert.SerializeObject(ReceivedFiles);
-                File.WriteAllText(historyFile, json);
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    var localFolder = ApplicationData.Current.LocalFolder;
+                    var historyFile = Path.Combine(localFolder.Path, HistoryFileName);
+                    var json = JsonConvert.SerializeObject(ReceivedFiles);
+                    File.WriteAllText(historyFile, json);
+                });
             }
             catch (Exception ex)
             {

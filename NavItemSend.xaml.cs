@@ -70,6 +70,7 @@ namespace LocalDrop
         private ObservableCollection<SendTransferItem> ActiveSendTransfers { get; } = new();
         private double _totalProgress = 0;
         private string _totalProgressText = "";
+        private int port = int.Parse(MySettings.ReadJsonToDictionary()["port"].ToString());
 
         public double TotalProgress
         {
@@ -552,7 +553,7 @@ namespace LocalDrop
 
                                     await fileSender.SendFileAsync(fileInfo,
                                         endpointPair.RemoteHostName.ToString(),
-                                        27431,
+                                        port,
                                         transfer);
 
                                     DispatcherQueue.TryEnqueue(() =>

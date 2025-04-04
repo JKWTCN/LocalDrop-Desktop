@@ -19,6 +19,12 @@
              Text=""/>
                 <Button Content="浏览..." Width="80" Height="30" Click="BrowseFolderButton_Click"/>
             </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <TextBlock Text="端口:" VerticalAlignment="Center" FontSize="16"/>
+                <TextBox x:Name="SocketTextBox" Width="300" Height="30" 
+ Text=""/>
+                <Button Content="保存" Width="80" Height="30" Click="SocketButton_Click"/>
+            </StackPanel>
             <StackPanel Orientation="Horizontal" Spacing="15">
                 <!-- GitHub 按钮 -->
                 <Button Content="GitHub 主页" 

@@ -147,7 +147,6 @@ namespace LocalDrop.Receiver
                     }
                     DispatcherQueue.TryEnqueue(() =>
                     {
-
                         transferItem.Status = TransferReceivingStatus.Completed;
                         FileTransferCompleted?.Invoke(transferItem);
                     });
