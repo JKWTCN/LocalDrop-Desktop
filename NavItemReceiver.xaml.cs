@@ -33,6 +33,7 @@ namespace LocalDrop
         {
             this.InitializeComponent();
             LoadHistory();
+
             receiver.FileTransferStarted += OnFileTransferStarted;
             receiver.FileProgressChanged += OnFileProgressChanged;
             receiver.FileTransferCompleted += OnFileTransferCompleted;
@@ -184,6 +185,7 @@ namespace LocalDrop
             if (args.Status == WiFiDirectAdvertisementPublisherStatus.Started)
             {
                 Debug.WriteLine("wifiDirect正常开启");
+                //EnableDHCP();
                 //AssociationEndpoint 关联的终结点。 这包括其他电脑、平板电脑和手机。
                 //DeviceInterface 设备接口。
                 //WiFiDirectDeviceSelectorType wiFiDirectDeviceSelectorType = WiFiDirectDeviceSelectorType.AssociationEndpoint;
@@ -205,6 +207,27 @@ namespace LocalDrop
                 Debug.WriteLine($"wifiDirect状态{args.Status}");
             }
         }
+
+
+
+        //public void EnableDHCP()
+        //{
+        //    // 以管理员身份运行 netsh 命令启用 DHCP
+        //    var psi = new ProcessStartInfo
+        //    {
+        //        FileName = "netsh",
+        //        Arguments = "interface ip set address \"Wi-Fi Direct\" dhcp",
+        //        Verb = "runas", // 管理员权限
+        //        UseShellExecute = true
+        //    };
+
+        //    Process.Start(psi)?.WaitForExit();
+
+        //    // 如果需要也更新DNS为自动获取
+        //    psi.Arguments = "interface ip set dnsservers \"Wi-Fi Direct\" dhcp";
+        //    Process.Start(psi)?.WaitForExit();
+        //}
+
         bool is_listen = false;
         private async void ConnectionRequestedHandler(
       WiFiDirectConnectionListener sender,
@@ -212,8 +235,30 @@ namespace LocalDrop
         {
             Debug.WriteLine("有连接请求");
             var request = args.GetConnectionRequest();
-            var device = await WiFiDirectDevice.FromIdAsync(request.DeviceInformation.Id);
-            device.ConnectionStatusChanged += new TypedEventHandler<Windows.Devices.WiFiDirect.WiFiDirectDevice, object>(OnConnectionChanged);
+            try
+            {
+                //var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60)); // 30 second timeout
+                // .AsTask(cts.Token)
+                var device = await WiFiDirectDevice.FromIdAsync(request.DeviceInformation.Id);
+                device.ConnectionStatusChanged += new TypedEventHandler<Windows.Devices.WiFiDirect.WiFiDirectDevice, object>(OnConnectionChanged);
+            }
+            catch (TimeoutException)
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    DialogHelper.ShowMessageAsync("提示", "设备连接超时", this.XamlRoot);
+                });
+            }
+            catch (Exception ex)
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    DialogHelper.ShowMessageAsync("错误", ex.Message, this.XamlRoot);
+                });
+
+            }
+            //var device = await WiFiDirectDevice.FromIdAsync(request.DeviceInformation.Id);
+            //device.ConnectionStatusChanged += new TypedEventHandler<Windows.Devices.WiFiDirect.WiFiDirectDevice, object>(OnConnectionChanged);
             //try
             //{
             //    if (device == null)
